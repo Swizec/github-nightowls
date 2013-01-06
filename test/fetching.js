@@ -16,5 +16,12 @@ describe("Fetching", function () {
         });
     });
 
+    it("gets a punchcard", function (done) {
+        fetching.punchcard('Swizec/nightowls', function (err, punchcard) {
+            punchcard.should.be.an.instanceof(Array);
+
+            done();
+        });
+    });
 
 });
