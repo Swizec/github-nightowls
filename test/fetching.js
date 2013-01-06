@@ -20,6 +20,8 @@ describe("Fetching", function () {
         fetching.punchcard('Swizec/nightowls', function (err, punchcard) {
             punchcard.should.be.an.instanceof(Array);
 
+            console.log(punchcard);
+
             done();
         });
     });
