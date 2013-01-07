@@ -2,13 +2,37 @@
 var db = require('./lib/db'),
     fetching = require('./lib/fetching');
 
-var scrape_repos = function (page) {
+var inc_timeout = function (timeout) {
+    if (!timeout) {
+        timeout = 1000;
+    }else if (timeout < 3600) {
+        timeout *= 60;
+    }else{
+        timeout *= 2;
+    }
+    
+    return timeout;
+};
+
+var scrape_repos = function (page, timeout) {
     console.log("Fetching page: "+page);
     fetching.repos(page, function (err, repos) {
-        db.repos(repos, function (err) {
-            console.log("Stored "+repos.length+" repos.");
-            scrape_repos(page+1);
-        });
+        if (err) {
+            if (err.status == 403) {
+                timeout = inc_timeout(timeout);
+
+                console.log("API limit");
+                console.log("Timing out for ", timeout/1000);
+                setTimeout(function () {
+                    scrape_repos(page, timeout);
+                }, timeout);
+            }
+        }else{
+            db.repos(repos, function (err) {
+                console.log("Stored "+repos.length+" repos.");
+                scrape_repos(page+1, 0);
+            });
+        }
     });
 };
 
