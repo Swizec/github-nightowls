@@ -5,7 +5,7 @@ var db = require('./lib/db'),
 var inc_timeout = function (timeout) {
     if (!timeout) {
         timeout = 1000;
-    }else if (timeout < 3600) {
+    }else if (timeout < 3600000) {
         timeout *= 60;
     }else{
         timeout *= 2;
@@ -23,6 +23,7 @@ var scrape_repos = function (page, timeout) {
 
                 console.log("API limit");
                 console.log("Timing out for ", timeout/1000);
+
                 setTimeout(function () {
                     scrape_repos(page, timeout);
                 }, timeout);
