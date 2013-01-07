@@ -15,6 +15,7 @@
     "octonode": "*",
     "mongodb": "*",
     "mongoose": "*",
-    "superagent": "*"
+    "superagent": "*",
+    "underscore": "*"
   }
 }
