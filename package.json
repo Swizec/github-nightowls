@@ -16,6 +16,7 @@
     "mongodb": "*",
     "mongoose": "*",
     "superagent": "*",
-    "underscore": "*"
+    "underscore": "*",
+    "redis": "*"
   }
 }
