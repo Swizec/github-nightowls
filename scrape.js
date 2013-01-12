@@ -1,5 +1,6 @@
 
 var db = require('./lib/db'),
+    redis = require('redis').createClient(),
     fetching = require('./lib/fetching');
 
 var inc_timeout = function (timeout) {
@@ -38,7 +39,8 @@ var scrape_repos = function (page, timeout) {
 };
 
 var punchcards = function () {
-    db.models.repo.find({}, function (err, repos) {
+    redis.smembers('repositories', function (err, repos) {
+        console.log("got repos");
         repos.map(function (repo) {
             var name = repo.owner+'/'+repo.name;
             fetching.punchcard(name, function (err, punchcard) {
