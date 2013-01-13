@@ -46,7 +46,8 @@ var punchcards = function () {
         format("mongodb://%s:%s/github-nightowls?w=1", 'localhost', 27017),
         function(err, _db) {
             
-            var repos = _db.collection('repos');
+            var repos = _db.collection('repos'),
+                punchcards = _db.collection('punchcards');
             
             repos.find().each(function (err, repo) {
                 if (err || !repo) {
@@ -61,13 +62,19 @@ var punchcards = function () {
                     if (!ismember) {
                         
                         fetching.punchcard(name, function (err, punchcard) {
-                            db.punchcards(name, punchcard, function () {
+                            punchcards.insert({repo: name, data: punchcard}, function (err) {
+                                if (err) {
+                                    console.log("Error saving at "+(new Date()));
+                                    console.log(err);
+                                    return;
+                                }
+
                                 redis.multi()
                                     .sadd('processed', name)
                                     .incr('N_processed')
                                     .exec(function (err) {
                                         console.log((new Date())+" punchcard "+name);
-                                    });
+                                    });      
                             });
                         });
 
