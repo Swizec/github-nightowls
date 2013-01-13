@@ -1,6 +1,8 @@
 
 var db = require('./lib/db'),
+    mongo = require('mongodb'),
     redis = require('redis').createClient(),
+    format = require('util').format,
     fetching = require('./lib/fetching');
 
 var inc_timeout = function (timeout) {
@@ -39,17 +41,42 @@ var scrape_repos = function (page, timeout) {
 };
 
 var punchcards = function () {
-    redis.smembers('repositories', function (err, repos) {
-        console.log("got repos");
-        repos.map(function (repo) {
-            var name = repo.owner+'/'+repo.name;
-            fetching.punchcard(name, function (err, punchcard) {
-                db.punchcards(name, punchcard, function () {
-                    console.log("Saved punchcard "+name);
+
+    mongo.Db.connect(
+        format("mongodb://%s:%s/github-nightowls?w=1", 'localhost', 27017),
+        function(err, _db) {
+            
+            var repos = _db.collection('repos');
+            
+            repos.find().each(function (err, repo) {
+                if (err || !repo) {
+                    console.log("Error at "+(new Date()));
+                    console.log(err);
+                    return;
+                }
+
+                var name = repo.owner+'/'+repo.name;
+
+                redis.sismember('processed', name, function (err, ismember) {
+                    if (!ismember) {
+                        
+                        fetching.punchcard(name, function (err, punchcard) {
+                            db.punchcards(name, punchcard, function () {
+                                redis.multi()
+                                    .sadd('processed', name)
+                                    .incr('N_processed')
+                                    .exec(function (err) {
+                                        console.log((new Date())+" punchcard "+name);
+                                    });
+                            });
+                        });
+
+                    }else{
+                        console.log("skipped "+name);
+                    }
                 });
             });
         });
-    });
 };
 
 ({repos: function () { scrape_repos(1); },
