@@ -1,5 +1,7 @@
 
 var db = require('./lib/db'),
+    mongo = require('mongodb'),
+    format = require('util').format,
     _ = require('underscore');
 
 var normalise = function (histogram) {
@@ -12,23 +14,43 @@ var normalise = function (histogram) {
     return histogram;
 };
 
-var histogram = function (callback) {
+var histogram = function (key, callback) {
 
     var histogram = {};
 
-    db.models.punchcard.find({}, function (err, punchcards) {
-        punchcards.forEach(function (punchcard) {
-            punchcard.data.forEach(function (entry) {
-                var hour = entry[1],
-                    count = entry[2];
+     mongo.Db.connect(
+        format("mongodb://%s:%s/github-nightowls?w=1", 'localhost', 27017),
+        function(err, _db) {
+            
+            var punchcards = _db.collection('punchcards');
 
-                histogram[hour] = histogram[hour] ? histogram[hour]+count : count;
+            punchcards.find().each(function (err, punchcard) {
+                if (!err && !punchcard) {
+                    console.log("Done!");
+
+                    callback(histogram);
+                    return;
+                }
+
+                if (err || !punchcard.data) {
+                    console.log('Error', err);
+                    console.log(punchcard);
+                    return;
+                }
+                
+                punchcard.data.forEach(function (entry) {
+                    var hour = entry[key],
+                        count = entry[2];
+
+                    histogram[hour] = histogram[hour] ? histogram[hour]+count : count;
+                });
+
+                console.log("Histogram'd "+punchcard.repo);
             });
         });
 
-        callback(histogram);
-    });
-
 };
 
-histogram(console.log);
+({days: function () { histogram(0, console.log); },
+  hours: function () { histogram(1, console.log); }
+})[process.argv[2]]();
