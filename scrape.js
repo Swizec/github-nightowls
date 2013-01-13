@@ -86,5 +86,34 @@ var punchcards = function () {
         });
 };
 
+// used to fix state in redis
+var count_cards = function () {
+    redis.multi()
+        .del('processed')
+        .del('N_processed').exec(function () {
+            mongo.Db.connect(
+                format("mongodb://%s:%s/github-nightowls?w=1", 'localhost', 27017),
+                function(err, _db) {
+                    
+                    var punchcards = _db.collection('punchcards');
+                    
+                    punchcards.find().each(function (err, punchcard) {
+                        if (!err && !punchcard) {
+                            console.log("Done!");
+                            return;
+                        }
+                        
+                        redis.multi()
+                            .sadd('processed', punchcard.repo)
+                            .incr('N_processed')
+                            .exec(function (err) {
+                                console.log((new Date())+" counted "+punchcard.repo);
+                            });
+                    });
+                });
+        });
+};
+
 ({repos: function () { scrape_repos(1); },
-  punchcards: punchcards})[process.argv[2]]();
+  punchcards: punchcards,
+  count: count_cards})[process.argv[2]]();
