@@ -37,6 +37,12 @@ var histogram = function (key, callback) {
                     console.log(punchcard);
                     return;
                 }
+
+                if (!punchcard.data.forEach) {
+                    console.log('Strange error');
+                    console.log(punchcard);
+                    return;
+                }
                 
                 punchcard.data.forEach(function (entry) {
                     var hour = entry[key],
