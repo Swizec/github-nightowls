@@ -14,7 +14,11 @@ var normalise = function (histogram) {
     return histogram;
 };
 
-var histogram = function (key, callback) {
+var histogram = function (key, filter, callback) {
+    if (arguments.length < 3) {
+        callback = arguments[1];
+        filter = null;
+    }
 
     var histogram = {};
 
@@ -43,6 +47,11 @@ var histogram = function (key, callback) {
                     console.log(punchcard);
                     return;
                 }
+
+                if(filter && !filter(punchcard)) {
+                    console.log('Filtering out', punchcard.repo);
+                    return;
+                }
                 
                 punchcard.data.forEach(function (entry) {
                     var hour = entry[key],
@@ -57,6 +66,22 @@ var histogram = function (key, callback) {
 
 };
 
+var weekend_commits = function (punchcard) {
+    return punchcard.filter(function (entry) { // get weekend days with N > 0
+        var day = entry[0], hour = entry[1], N = entry[2];
+
+        return (day == 0 || day == 6) && N > 0;
+    }).length > 0;
+};
+
+var no_weekend_commits = function (punchcard) {
+    return !weekend_commits(punchcard);
+};
+
+
+
 ({days: function () { histogram(0, console.log); },
-  hours: function () { histogram(1, console.log); }
+  hours: function () { histogram(1, console.log); },
+  weekends: function () { histogram(1, weekend_commits, console.log); },
+  noweekends: function () { histogram(1, no_weekend_commits, console.log); }
 })[process.argv[2]]();
