@@ -67,7 +67,7 @@ var histogram = function (key, filter, callback) {
 };
 
 var weekend_commits = function (punchcard) {
-    return punchcard.filter(function (entry) { // get weekend days with N > 0
+    return punchcard.data.filter(function (entry) { // get weekend days with N > 0
         var day = entry[0], hour = entry[1], N = entry[2];
 
         return (day == 0 || day == 6) && N > 0;
